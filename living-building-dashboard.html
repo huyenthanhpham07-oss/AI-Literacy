@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Living Building Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0d12;--bg2:#111520;--bg3:#171c28;--bg4:#1e2535;
+  --border:#2a3045;--border2:#3a4560;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --green:#22c55e;--green-bg:rgba(34,197,94,0.1);
+  --yellow:#f59e0b;--yellow-bg:rgba(245,158,11,0.1);
+  --orange:#f97316;--orange-bg:rgba(249,115,22,0.1);
+  --red:#ef4444;--red-bg:rgba(239,68,68,0.1);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,0.1);
+  --cyan:#06b6d4;
+  --font-main:'Syne',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font-main);font-size:14px;line-height:1.5}
+.app{display:flex;height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:210px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.logo{padding:20px 16px;border-bottom:1px solid var(--border)}
+.logo-mark{font-family:var(--font-mono);font-size:10px;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.logo-name{font-size:16px;font-weight:700;color:var(--text);line-height:1.2}
+.nav{flex:1;padding:10px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;border-left:2px solid transparent;user-select:none}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg3);color:var(--cyan);border-left-color:var(--cyan)}
+.nav-item i{font-size:16px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;padding:2px 6px;font-size:10px;border-radius:4px;background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.2);font-family:var(--font-mono)}
+.nav-section{padding:16px 16px 6px;font-size:10px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;font-family:var(--font-mono)}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border)}
+.sys-status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* MAIN */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.topbar-left{display:flex;flex-direction:column}
+.page-title{font-size:18px;font-weight:700;color:var(--text)}
+.page-sub{font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:500;font-family:var(--font-mono);white-space:nowrap}
+.badge i{font-size:13px}
+.badge-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+.badge-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
+.badge-orange{background:var(--orange-bg);color:var(--orange);border:1px solid rgba(249,115,22,0.2)}
+.badge-blue{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(59,130,246,0.2)}
+
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.card-title{font-size:12px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:7px}
+.card-title i{font-size:15px;color:var(--cyan)}
+
+/* HEALTH ROW */
+.health-row{display:grid;grid-template-columns:260px 1fr;gap:14px;margin-bottom:16px}
+.health-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden}
+.health-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green),var(--cyan))}
+.health-score-big{font-size:52px;font-weight:700;color:var(--text);font-family:var(--font-mono);line-height:1;margin:6px 0 10px}
+.health-score-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--font-mono)}
+.health-status-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-mono);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.stat-label i{font-size:13px}
+.stat-val{font-size:22px;font-weight:700;font-family:var(--font-mono);color:var(--text)}
+.stat-unit{font-size:12px;color:var(--text3);font-weight:400}
+.stat-change{font-size:11px;margin-top:3px;font-family:var(--font-mono);display:flex;align-items:center;gap:3px}
+.up{color:var(--red)}.down{color:var(--green)}.ok{color:var(--green)}
+
+/* SECTION GRIDS */
+.section-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+
+/* ALERTS */
+.alert-list{display:flex;flex-direction:column;gap:8px}
+.alert-item{display:flex;gap:12px;padding:10px 12px;background:var(--bg3);border-radius:8px;border-left:3px solid transparent;cursor:pointer;transition:background .15s}
+.alert-item:hover{background:var(--bg4)}
+.alert-crit{border-left-color:var(--red)}
+.alert-high{border-left-color:var(--orange)}
+.alert-warn{border-left-color:var(--yellow)}
+.alert-info{border-left-color:var(--blue)}
+.alert-icon{font-size:20px;margin-top:1px;flex-shrink:0}
+.alert-body{flex:1;min-width:0}
+.alert-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alert-desc{font-size:11px;color:var(--text2);font-family:var(--font-mono)}
+.alert-meta{font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:3px}
+
+/* PROGRESS */
+.progress-row{display:flex;flex-direction:column;gap:10px}
+.prog-item{display:flex;flex-direction:column;gap:4px}
+.prog-labels{display:flex;justify-content:space-between;font-size:12px;font-family:var(--font-mono)}
+.prog-name{color:var(--text2)}.prog-val{color:var(--text)}
+.prog-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s ease}
+
+/* SENSOR TABLE */
+.sensor-table{width:100%;border-collapse:collapse;font-size:12px}
+.sensor-table th{color:var(--text3);font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:7px 8px;border-bottom:1px solid var(--border);text-align:left;font-weight:500}
+.sensor-table td{padding:8px;border-bottom:1px solid rgba(42,48,69,.5);color:var(--text2);font-family:var(--font-mono)}
+.sensor-table tr:hover td{background:var(--bg3)}
+.sensor-table td:first-child{color:var(--text);font-weight:500}
+
+/* PREDICTION */
+.prediction-card{display:flex;flex-direction:column;gap:8px}
+.pred-item{display:flex;gap:12px;padding:10px 12px;background:var(--bg3);border-radius:8px;align-items:center}
+.pred-prob{font-size:20px;font-weight:700;font-family:var(--font-mono);width:48px;text-align:center;flex-shrink:0}
+.pred-body{flex:1;min-width:0}
+.pred-component{font-size:13px;font-weight:600;color:var(--text)}
+.pred-detail{font-size:11px;color:var(--text2);font-family:var(--font-mono);margin-top:2px}
+.pred-time{font-size:10px;font-family:var(--font-mono);margin-top:3px}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+
+/* FLOOR BUTTONS */
+.floor-btn{padding:5px 14px;font-size:12px;font-family:var(--font-mono);border-radius:5px;cursor:pointer;transition:all .15s;font-weight:500}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .sidebar{width:56px}
+  .logo-mark,.logo-name,.nav-section,.nav-item span,.sidebar-footer div:last-child,.nav-badge{display:none}
+  .nav-item{justify-content:center;padding:12px 0}
+  .health-row{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .section-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .topbar-right .badge:not(:first-child){display:none}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">IoT // Smart</div>
+      <div class="logo-name">Living Building</div>
+    </div>
+    <div class="nav">
+      <div class="nav-section">Monitor</div>
+      <div class="nav-item active" onclick="showPage('dashboard',this)">
+        <i class="ti ti-layout-dashboard"></i><span>Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="showPage('digital-twin',this)">
+        <i class="ti ti-building"></i><span>Digital Twin</span>
+      </div>
+      <div class="nav-item" onclick="showPage('sensors',this)">
+        <i class="ti ti-cpu"></i><span>Sensor Data</span>
+      </div>
+      <div class="nav-item" onclick="showPage('analytics',this)">
+        <i class="ti ti-chart-line"></i><span>Analytics</span>
+      </div>
+      <div class="nav-section">Operations</div>
+      <div class="nav-item" onclick="showPage('alerts',this)">
+        <i class="ti ti-bell-ringing"></i><span>Alerts</span><span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" onclick="showPage('maintenance',this)">
+        <i class="ti ti-tool"></i><span>Maintenance</span>
+      </div>
+      <div class="nav-item" onclick="showPage('prediction',this)">
+        <i class="ti ti-brain"></i><span>AI Prediction</span>
+      </div>
+      <div class="nav-section">System</div>
+      <div class="nav-item" onclick="showPage('reports',this)">
+        <i class="ti ti-file-analytics"></i><span>Reports</span>
+      </div>
+      <div class="nav-item" onclick="showPage('settings',this)">
+        <i class="ti ti-settings"></i><span>Settings</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sys-status"><div class="dot"></div><span>System online</span></div>
+      <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:4px">247/250 sensors active</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="page-title" id="page-title">Dashboard Overview</div>
+        <div class="page-sub" id="page-sub">// Last updated: 2026-05-12 08:00 — Live feed active</div>
+      </div>
+      <div class="topbar-right">
+        <span class="badge badge-green"><i class="ti ti-wifi"></i>Connected</span>
+        <span class="badge badge-yellow"><i class="ti ti-alert-triangle"></i>3 Alerts</span>
+        <span class="badge" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);cursor:pointer" onclick="toggleTime()">
+          <i class="ti ti-clock"></i><span id="clock">08:00</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div class="page active" id="page-dashboard">
+        <div class="health-row">
+          <div class="health-card">
+            <div class="health-score-label">Building Health Score</div>
+            <div class="health-score-big">87<span style="font-size:20px;color:var(--text3)">/100</span></div>
+            <div style="display:flex;gap:20px">
+              <div>
+                <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono)">STATUS</div>
+                <div style="font-size:13px;color:var(--green);font-weight:600">Stable</div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono)">RISK LEVEL</div>
+                <div style="font-size:13px;color:var(--yellow);font-weight:600">Medium</div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono)">SENSORS</div>
+                <div style="font-size:13px;color:var(--cyan);font-weight:600">247/250</div>
+              </div>
+            </div>
+            <div class="health-status-row">
+              <span class="badge badge-green"><i class="ti ti-check"></i>Operational</span>
+              <span class="badge badge-yellow"><i class="ti ti-eye"></i>Watch: 2 zones</span>
+            </div>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-label"><i class="ti ti-droplet" style="color:var(--blue)"></i>Water</div>
+              <div class="stat-val">1,250<span class="stat-unit"> L/d</span></div>
+              <div class="stat-change up"><i class="ti ti-arrow-up"></i>+8% vs avg</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><i class="ti ti-bolt" style="color:var(--yellow)"></i>Electricity</div>
+              <div class="stat-val">32.5<span class="stat-unit"> kWh</span></div>
+              <div class="stat-change up"><i class="ti ti-arrow-up"></i>+5% vs avg</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><i class="ti ti-temperature" style="color:var(--orange)"></i>Temp</div>
+              <div class="stat-val">29<span class="stat-unit"> °C</span></div>
+              <div class="stat-change ok"><i class="ti ti-check"></i>Normal</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><i class="ti ti-wind" style="color:var(--cyan)"></i>CO₂</div>
+              <div class="stat-val">820<span class="stat-unit"> ppm</span></div>
+              <div class="stat-change ok"><i class="ti ti-check"></i>Acceptable</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-chart-bar"></i>Water usage — 7 days</div>
+            </div>
+            <div style="position:relative;height:130px">
+              <canvas id="waterChart" role="img" aria-label="Water usage bar chart over 7 days">Daily water: Mon 980, Tue 1100, Wed 1050, Thu 1200, Fri 1350, Sat 1400, Sun 1250 L/day.</canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-bolt"></i>Electricity — 7 days</div>
+            </div>
+            <div style="position:relative;height:130px">
+              <canvas id="elecChart" role="img" aria-label="Electricity line chart over 7 days">Electricity: Mon 28, Tue 30, Wed 29, Thu 31, Fri 34, Sat 36, Sun 32 kWh.</canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-bell-ringing" style="color:var(--red)"></i>Recent alerts</div>
+              <span class="badge badge-red">3 open</span>
+            </div>
+            <div class="alert-list">
+              <div class="alert-item alert-crit" onclick="showPage('alerts',null)">
+                <div class="alert-icon" style="color:var(--red)"><i class="ti ti-alert-circle"></i></div>
+                <div class="alert-body">
+                  <div class="alert-title">Pipe P-204 — pressure drop 38%</div>
+                  <div class="alert-desc">Floor 2 · Bathroom Zone B · Leak prob: 84%</div>
+                  <div class="alert-meta">ALT-0001 · CRITICAL · 2h ago · Action within 24h</div>
+                </div>
+              </div>
+              <div class="alert-item alert-high" onclick="showPage('alerts',null)">
+                <div class="alert-icon" style="color:var(--orange)"><i class="ti ti-alert-triangle"></i></div>
+                <div class="alert-body">
+                  <div class="alert-title">HVAC Unit 3B — service in 8 days</div>
+                  <div class="alert-desc">Floor 3 · Energy +27% above 7-day average</div>
+                  <div class="alert-meta">ALT-0002 · HIGH · 5h ago</div>
+                </div>
+              </div>
+              <div class="alert-item alert-warn" onclick="showPage('alerts',null)">
+                <div class="alert-icon" style="color:var(--yellow)"><i class="ti ti-battery-1"></i></div>
+                <div class="alert-body">
+                  <div class="alert-title">Sensor #147 — low battery (8%)</div>
+                  <div class="alert-desc">Kitchen Wall · Moisture sensor M-W102</div>
+                  <div class="alert-meta">ALT-0003 · WARNING · 12h ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-gauge"></i>Resource efficiency</div>
+            </div>
+            <div class="progress-row">
+              <div class="prog-item">
+                <div class="prog-labels"><span class="prog-name">Energy efficiency</span><span class="prog-val">87%</span></div>
+                <div class="prog-bar"><div class="prog-fill" style="width:87%;background:var(--green)"></div></div>
+              </div>
+              <div class="prog-item">
+                <div class="prog-labels"><span class="prog-name">Water pressure — Zone A</span><span class="prog-val" style="color:var(--yellow)">62%</span></div>
+                <div class="prog-bar"><div class="prog-fill" style="width:62%;background:var(--yellow)"></div></div>
+              </div>
+              <div class="prog-item">
+                <div class="prog-labels"><span class="prog-name">Wall moisture — avg</span><span class="prog-val">44%</span></div>
+                <div class="prog-bar"><div class="prog-fill" style="width:44%;background:var(--cyan)"></div></div>
+              </div>
+              <div class="prog-item">
+                <div class="prog-labels"><span class="prog-name">Structural vibration risk</span><span class="prog-val" style="color:var(--green)">12%</span></div>
+                <div class="prog-bar"><div class="prog-fill" style="width:12%;background:var(--green)"></div></div>
+              </div>
+              <div class="prog-item">
+                <div class="prog-labels"><span class="prog-name">Pipe P-204 pressure</span><span class="prog-val" style="color:var(--red)">55%</span></div>
+                <div class="prog-bar"><div class="prog-fill" style="width:55%;background:var(--red)"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== DIGITAL TWIN ===== -->
+      <div class="page" id="page-digital-twin">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-map-2"></i>2D building map — interactive floor view</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span class="badge badge-green">Floor 1: Normal</span>
+              <span class="badge badge-yellow">Floor 2: Watch</span>
+              <span class="badge badge-red">Floor 3: Alert</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <button class="floor-btn" id="fl1-btn" onclick="selectFloor(1)" style="background:var(--cyan);color:#000;border:none">Floor 1</button>
+            <button class="floor-btn" id="fl2-btn" onclick="selectFloor(2)" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border)">Floor 2</button>
+            <button class="floor-btn" id="fl3-btn" onclick="selectFloor(3)" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border)">Floor 3</button>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;border:1px solid var(--border);overflow:hidden">
+            <svg id="floor-svg" viewBox="0 0 640 320" width="100%" style="display:block">
+              <rect width="640" height="320" fill="#111520"/>
+              <!-- FLOOR 1 -->
+              <g id="f1">
+                <rect x="20" y="20" width="180" height="130" fill="#0d1a0d" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+                <text x="110" y="78" text-anchor="middle" fill="#22c55e" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Living Room</text>
+                <text x="110" y="96" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">● Temp 28°C · Normal</text>
+                <circle cx="50" cy="40" r="5" fill="#22c55e" opacity=".8"/>
+                <circle cx="170" cy="40" r="5" fill="#22c55e" opacity=".8"/>
+
+                <rect x="215" y="20" width="150" height="130" fill="#0d1a0d" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+                <text x="290" y="78" text-anchor="middle" fill="#22c55e" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Kitchen</text>
+                <text x="290" y="96" text-anchor="middle" fill="#fbbf24" font-size="10" font-family="JetBrains Mono,monospace">⚠ Moisture 44%</text>
+                <circle cx="250" cy="40" r="5" fill="#f59e0b" opacity=".8"/>
+
+                <rect x="380" y="20" width="110" height="130" fill="#1a1400" stroke="#f59e0b" stroke-width="1.5" rx="4"/>
+                <text x="435" y="78" text-anchor="middle" fill="#f59e0b" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">WC-01</text>
+                <text x="435" y="96" text-anchor="middle" fill="#fbbf24" font-size="10" font-family="JetBrains Mono,monospace">⚠ Monitor</text>
+                <circle cx="410" cy="40" r="5" fill="#f59e0b" opacity=".9"/>
+
+                <rect x="505" y="20" width="115" height="130" fill="#0d1a0d" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+                <text x="562" y="78" text-anchor="middle" fill="#22c55e" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Tech Room</text>
+                <text x="562" y="96" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">● Online</text>
+                <circle cx="540" cy="40" r="5" fill="#22c55e" opacity=".8"/>
+
+                <rect x="20" y="165" width="220" height="135" fill="#0d1a0d" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+                <text x="130" y="225" text-anchor="middle" fill="#22c55e" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Bedroom 1</text>
+                <text x="130" y="243" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">● Temp 28°C · Humidity 58%</text>
+
+                <rect x="255" y="165" width="180" height="135" fill="#0d1a0d" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+                <text x="345" y="225" text-anchor="middle" fill="#22c55e" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Bedroom 2</text>
+                <text x="345" y="243" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">● Temp 27°C · Normal</text>
+
+                <rect x="450" y="165" width="170" height="135" fill="#0d1a0d" stroke="#06b6d4" stroke-width="1" rx="4"/>
+                <text x="535" y="225" text-anchor="middle" fill="#06b6d4" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Corridor</text>
+                <text x="535" y="243" text-anchor="middle" fill="#67e8f9" font-size="10" font-family="JetBrains Mono,monospace">● CO₂ 780 ppm</text>
+              </g>
+              <!-- FLOOR 2 -->
+              <g id="f2" style="display:none">
+                <rect x="20" y="20" width="160" height="130" fill="#0d1a0d" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+                <text x="100" y="78" text-anchor="middle" fill="#22c55e" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Office A</text>
+                <text x="100" y="96" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">● Normal · CO₂ 820</text>
+
+                <rect x="195" y="20" width="140" height="130" fill="#1a0500" stroke="#ef4444" stroke-width="2.5" rx="4"/>
+                <text x="265" y="68" text-anchor="middle" fill="#ef4444" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">WC-02</text>
+                <text x="265" y="85" text-anchor="middle" fill="#f87171" font-size="10" font-family="JetBrains Mono,monospace">🔴 CRITICAL</text>
+                <text x="265" y="101" text-anchor="middle" fill="#f87171" font-size="10" font-family="JetBrains Mono,monospace">Pipe P-204 −38%</text>
+                <text x="265" y="117" text-anchor="middle" fill="#f87171" font-size="9" font-family="JetBrains Mono,monospace">Leak prob: 84%</text>
+                <circle cx="265" cy="50" r="7" fill="#ef4444" opacity=".9"/>
+                <circle cx="265" cy="50" r="13" fill="none" stroke="#ef4444" stroke-width="1.5" opacity=".4" style="animation:pulse 1.5s infinite"/>
+
+                <rect x="350" y="20" width="150" height="130" fill="#1a1400" stroke="#f59e0b" stroke-width="1.5" rx="4"/>
+                <text x="425" y="78" text-anchor="middle" fill="#f59e0b" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Meeting Rm</text>
+                <text x="425" y="96" text-anchor="middle" fill="#fbbf24" font-size="10" font-family="JetBrains Mono,monospace">⚠ CO₂ 1,240 ppm</text>
+                <circle cx="380" cy="40" r="5" fill="#f59e0b" opacity=".8"/>
+
+                <rect x="515" y="20" width="105" height="130" fill="#0d1a0d" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+                <text x="567" y="83" text-anchor="middle" fill="#22c55e" font-size="12" font-family="JetBrains Mono,monospace" font-weight="500">Stairwell</text>
+                <text x="567" y="100" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">● OK</text>
+
+                <rect x="20" y="165" width="600" height="135" fill="#0d1515" stroke="#06b6d4" stroke-width="1" rx="4"/>
+                <text x="320" y="225" text-anchor="middle" fill="#06b6d4" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Corridor / Open Plan</text>
+                <text x="320" y="243" text-anchor="middle" fill="#67e8f9" font-size="10" font-family="JetBrains Mono,monospace">● Sensors online: 48/50 · Humidity 62%</text>
+              </g>
+              <!-- FLOOR 3 -->
+              <g id="f3" style="display:none">
+                <rect x="20" y="20" width="195" height="140" fill="#1a0000" stroke="#ef4444" stroke-width="2.5" rx="4"/>
+                <text x="117" y="72" text-anchor="middle" fill="#ef4444" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">HVAC Room</text>
+                <text x="117" y="89" text-anchor="middle" fill="#f87171" font-size="10" font-family="JetBrains Mono,monospace">⛔ Unit 3B FAULT</text>
+                <text x="117" y="106" text-anchor="middle" fill="#f87171" font-size="10" font-family="JetBrains Mono,monospace">Energy +27%</text>
+                <text x="117" y="122" text-anchor="middle" fill="#f87171" font-size="9" font-family="JetBrains Mono,monospace">Service in 8 days</text>
+                <circle cx="60" cy="42" r="6" fill="#ef4444" opacity=".9"/>
+                <circle cx="60" cy="42" r="12" fill="none" stroke="#ef4444" stroke-width="1.5" opacity=".4"/>
+
+                <rect x="230" y="20" width="165" height="140" fill="#0d1a0d" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+                <text x="312" y="84" text-anchor="middle" fill="#22c55e" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Server Room</text>
+                <text x="312" y="102" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">● Temp 24°C · Stable</text>
+                <circle cx="270" cy="40" r="5" fill="#22c55e" opacity=".8"/>
+
+                <rect x="410" y="20" width="210" height="140" fill="#0d1a0d" stroke="#22c55e" stroke-width="1.5" rx="4"/>
+                <text x="515" y="84" text-anchor="middle" fill="#22c55e" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Storage</text>
+                <text x="515" y="102" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono,monospace">● Vibration 0.12g · Normal</text>
+
+                <rect x="20" y="175" width="600" height="125" fill="#0a1520" stroke="#06b6d4" stroke-width="1" rx="4"/>
+                <text x="320" y="231" text-anchor="middle" fill="#06b6d4" font-size="13" font-family="JetBrains Mono,monospace" font-weight="500">Roof Access / Solar Terrace</text>
+                <text x="320" y="249" text-anchor="middle" fill="#67e8f9" font-size="10" font-family="JetBrains Mono,monospace">Solar output: 2.4 kW · Wind: 12 km/h</text>
+              </g>
+            </svg>
+          </div>
+          <!-- Legend -->
+          <div style="margin-top:10px;display:flex;gap:16px;font-size:11px;font-family:var(--font-mono);flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(34,197,94,0.12);border:1px solid #22c55e;display:inline-block"></span><span style="color:var(--text3)">Normal</span></span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(245,158,11,0.12);border:1px solid #f59e0b;display:inline-block"></span><span style="color:var(--text3)">Monitor</span></span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(249,115,22,0.12);border:1px solid #f97316;display:inline-block"></span><span style="color:var(--text3)">At risk</span></span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(239,68,68,0.12);border:1px solid #ef4444;display:inline-block"></span><span style="color:var(--text3)">Critical</span></span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block"></span><span style="color:var(--text3)">Sensor node</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SENSOR DATA ===== -->
+      <div class="page" id="page-sensors">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-database"></i>Live sensor readings</div>
+            <span class="badge badge-green"><i class="ti ti-wifi"></i>247 online</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="sensor-table">
+              <thead>
+                <tr><th>Sensor ID</th><th>Location</th><th>Type</th><th>Value</th><th>Normal range</th><th>Status</th><th>Updated</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>W-P204</td><td>WC Floor 2</td><td>Water pressure</td><td style="color:var(--red)">1.1 bar</td><td>1.8–2.2 bar</td><td><span class="badge badge-red">Critical</span></td><td>08:00</td></tr>
+                <tr><td>M-W102</td><td>Kitchen Wall</td><td>Wall moisture</td><td style="color:var(--orange)">82%</td><td>&lt;60%</td><td><span class="badge badge-orange">High</span></td><td>08:00</td></tr>
+                <tr><td>E-A301</td><td>Elec. Room F3</td><td>Current</td><td style="color:var(--yellow)">18A</td><td>5–12A</td><td><span class="badge badge-yellow">Warning</span></td><td>08:00</td></tr>
+                <tr><td>T-HVAC3B</td><td>HVAC Unit 3B</td><td>Temp output</td><td style="color:var(--orange)">31°C</td><td>20–26°C</td><td><span class="badge badge-orange">High</span></td><td>08:00</td></tr>
+                <tr><td>C-M201</td><td>Meeting Rm F2</td><td>CO₂</td><td style="color:var(--yellow)">1,240 ppm</td><td>&lt;1,000 ppm</td><td><span class="badge badge-yellow">Warning</span></td><td>08:01</td></tr>
+                <tr><td>V-S101</td><td>Structure B1</td><td>Vibration</td><td style="color:var(--green)">0.12 g</td><td>&lt;0.5 g</td><td><span class="badge badge-green">Normal</span></td><td>08:01</td></tr>
+                <tr><td>T-LR01</td><td>Living Room F1</td><td>Temperature</td><td>28°C</td><td>18–30°C</td><td><span class="badge badge-green">Normal</span></td><td>08:02</td></tr>
+                <tr><td>W-KT01</td><td>Kitchen F1</td><td>Water flow</td><td>6.2 L/min</td><td>0–15 L/min</td><td><span class="badge badge-green">Normal</span></td><td>08:02</td></tr>
+                <tr><td>H-BD01</td><td>Bedroom 1 F1</td><td>Humidity</td><td>58%</td><td>30–70%</td><td><span class="badge badge-green">Normal</span></td><td>08:03</td></tr>
+                <tr><td>P-RF01</td><td>Roof Solar</td><td>Power output</td><td style="color:var(--cyan)">2.4 kW</td><td>0–5 kW</td><td><span class="badge badge-blue">Active</span></td><td>08:03</td></tr>
+                <tr><td>S-BD02</td><td>Bedroom 2 F1</td><td>Sound level</td><td>38 dB</td><td>&lt;55 dB</td><td><span class="badge badge-green">Normal</span></td><td>08:04</td></tr>
+                <tr><td>M-WC01</td><td>WC-01 Floor 1</td><td>Wall moisture</td><td style="color:var(--yellow)">67%</td><td>&lt;60%</td><td><span class="badge badge-yellow">Watch</span></td><td>08:04</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ANALYTICS ===== -->
+      <div class="page" id="page-analytics">
+        <div class="section-grid">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-chart-area-line"></i>Pipe P-204 pressure — 24h</div><span class="badge badge-red">Anomaly</span></div>
+            <div style="position:relative;height:150px">
+              <canvas id="pressureChart" role="img" aria-label="Water pressure over 24 hours">Pressure drop from 2.0 to 1.1 bar.</canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-droplet-half-2"></i>Wall moisture W-102 — 48h</div><span class="badge badge-orange">Rising</span></div>
+            <div style="position:relative;height:150px">
+              <canvas id="moistureChart" role="img" aria-label="Wall moisture rising over 48 hours">Moisture rising from 55% to 82%.</canvas>
+            </div>
+          </div>
+        </div>
+        <div class="section-grid">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-bolt"></i>Energy consumption by zone</div></div>
+            <div style="position:relative;height:150px">
+              <canvas id="energyZoneChart" role="img" aria-label="Energy by zone bar chart">HVAC Floor 3 highest at 18.6 kWh.</canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-wind"></i>CO₂ levels — all floors today</div></div>
+            <div style="position:relative;height:150px">
+              <canvas id="co2Chart" role="img" aria-label="CO2 levels across floors over time">Meeting room CO2 peaking at 1240 ppm.</canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ALERTS ===== -->
+      <div class="page" id="page-alerts">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-bell-ringing" style="color:var(--red)"></i>Active alerts</div>
+            <div style="display:flex;gap:8px">
+              <span class="badge badge-red">3 Critical/High</span>
+              <span class="badge badge-yellow">1 Warning</span>
+            </div>
+          </div>
+          <div class="alert-list">
+            <div class="alert-item alert-crit">
+              <div class="alert-icon" style="color:var(--red);font-size:22px"><i class="ti ti-alert-circle"></i></div>
+              <div class="alert-body">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px">
+                  <div style="font-size:13px;font-weight:600;color:var(--text)">ALT-0001 · Pipe P-204 — water pressure 38% below baseline</div>
+                  <span class="badge badge-red" style="flex-shrink:0">Critical</span>
+                </div>
+                <div class="alert-desc">Location: Floor 2 — Bathroom Zone B · Component: Pipe P-204</div>
+                <div class="alert-desc" style="margin-top:3px">Possible cause: Hidden leakage or pipe crack · AI confidence: 84%</div>
+                <div class="alert-desc" style="margin-top:3px;color:var(--orange)">→ Recommended: Inspect pipe P-204 and valve V-21 · Deadline: Within 24 hours</div>
+                <div class="alert-meta" style="margin-top:6px">Status: Open · Detected: 2h ago · Work order: WO-1024</div>
+              </div>
+            </div>
+            <div class="alert-item alert-high">
+              <div class="alert-icon" style="color:var(--orange);font-size:22px"><i class="ti ti-alert-triangle"></i></div>
+              <div class="alert-body">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px">
+                  <div style="font-size:13px;font-weight:600;color:var(--text)">ALT-0002 · HVAC Unit 3B — energy 27% above 7-day average</div>
+                  <span class="badge badge-orange" style="flex-shrink:0">High</span>
+                </div>
+                <div class="alert-desc">Location: Floor 3 — HVAC Room · Component: HVAC Unit 3B</div>
+                <div class="alert-desc" style="margin-top:3px">Possible cause: Clogged filter / compressor degrading · AI confidence: 76%</div>
+                <div class="alert-desc" style="margin-top:3px;color:var(--yellow)">→ Recommended: Replace air filter, inspect compressor · Service in 8 days</div>
+                <div class="alert-meta" style="margin-top:6px">Status: Open · Detected: 5h ago · Work order: WO-1025</div>
+              </div>
+            </div>
+            <div class="alert-item alert-warn">
+              <div class="alert-icon" style="color:var(--yellow);font-size:22px"><i class="ti ti-battery-1"></i></div>
+              <div class="alert-body">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px">
+                  <div style="font-size:13px;font-weight:600;color:var(--text)">ALT-0003 · Sensor #147 low battery — readings may become unreliable</div>
+                  <span class="badge badge-yellow" style="flex-shrink:0">Warning</span>
+                </div>
+                <div class="alert-desc">Location: Kitchen Wall · Sensor: M-W102 · Battery level: 8%</div>
+                <div class="alert-desc" style="margin-top:3px;color:var(--yellow)">→ Replace battery within 48 hours to maintain moisture monitoring</div>
+                <div class="alert-meta" style="margin-top:6px">Status: Open · Detected: 12h ago</div>
+              </div>
+            </div>
+            <div class="alert-item alert-info" style="opacity:.7">
+              <div class="alert-icon" style="color:var(--blue);font-size:22px"><i class="ti ti-info-circle"></i></div>
+              <div class="alert-body">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px">
+                  <div style="font-size:13px;font-weight:600;color:var(--text)">ALT-0004 · Meeting Room F2 — CO₂ above threshold (1,240 ppm)</div>
+                  <span class="badge badge-blue" style="flex-shrink:0">Info</span>
+                </div>
+                <div class="alert-desc">Location: Floor 2 — Meeting Room · Threshold: 1,000 ppm</div>
+                <div class="alert-desc" style="margin-top:3px">→ Increase ventilation · Auto-resolves when below 800 ppm</div>
+                <div class="alert-meta" style="margin-top:6px">Status: Monitoring · Detected: 1h ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== MAINTENANCE ===== -->
+      <div class="page" id="page-maintenance">
+        <div class="section-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-clipboard-list"></i>Work orders</div>
+              <span class="badge badge-yellow">2 active</span>
+            </div>
+            <div class="alert-list">
+              <div class="alert-item alert-crit">
+                <div class="alert-icon" style="color:var(--red)"><i class="ti ti-tool"></i></div>
+                <div class="alert-body">
+                  <div class="alert-title">WO-1024 · Pipe leakage inspection</div>
+                  <div class="alert-desc">Floor 2 — Bathroom Zone B · Assigned: Team A</div>
+                  <div class="alert-desc" style="margin-top:3px">Repair cost: <span style="color:var(--yellow)">$120</span> · Avoided damage: <span style="color:var(--green)">$900</span></div>
+                  <div class="alert-meta">Priority: Critical · Status: In Progress · Due: Today</div>
+                </div>
+              </div>
+              <div class="alert-item alert-high">
+                <div class="alert-icon" style="color:var(--orange)"><i class="ti ti-air-conditioning"></i></div>
+                <div class="alert-body">
+                  <div class="alert-title">WO-1025 · HVAC Unit 3B service</div>
+                  <div class="alert-desc">Floor 3 — HVAC Room · Assigned: Team B</div>
+                  <div class="alert-desc" style="margin-top:3px">Repair cost: <span style="color:var(--yellow)">$280</span> · Avoided damage: <span style="color:var(--green)">$2,400</span></div>
+                  <div class="alert-meta">Priority: High · Status: Scheduled · Due: 8 days</div>
+                </div>
+              </div>
+              <div class="alert-item" style="border-left-color:var(--text3);opacity:.6">
+                <div class="alert-icon" style="color:var(--text3)"><i class="ti ti-check"></i></div>
+                <div class="alert-body">
+                  <div class="alert-title">WO-1020 · Annual fire system inspection</div>
+                  <div class="alert-desc">All floors · Completed by Team C</div>
+                  <div class="alert-meta">Status: Completed · 3 days ago</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-trending-up"></i>Cost & ROI summary</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+              <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+                <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Damage avoided</div>
+                <div style="font-size:26px;font-weight:700;font-family:var(--font-mono);color:var(--green);margin-top:6px">$3,300</div>
+              </div>
+              <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+                <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Repair cost</div>
+                <div style="font-size:26px;font-weight:700;font-family:var(--font-mono);color:var(--yellow);margin-top:6px">$400</div>
+              </div>
+              <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+                <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">ROI this month</div>
+                <div style="font-size:26px;font-weight:700;font-family:var(--font-mono);color:var(--cyan);margin-top:6px">725%</div>
+              </div>
+              <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+                <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Avg save per $1</div>
+                <div style="font-size:26px;font-weight:700;font-family:var(--font-mono);color:var(--cyan);margin-top:6px">$8.25</div>
+              </div>
+            </div>
+            <div style="position:relative;height:120px">
+              <canvas id="roiChart" role="img" aria-label="Monthly ROI savings chart">ROI savings bar chart by month.</canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== AI PREDICTION ===== -->
+      <div class="page" id="page-prediction">
+        <div class="section-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><i class="ti ti-brain" style="color:var(--cyan)"></i>AI failure predictions</div>
+              <span class="badge badge-blue">Rule-based model</span>
+            </div>
+            <div class="prediction-card">
+              <div class="pred-item">
+                <div class="pred-prob" style="color:var(--red)">84%</div>
+                <div class="pred-body">
+                  <div class="pred-component">Pipe P-204 — Zone B</div>
+                  <div class="pred-detail">Pressure −38% · Moisture rising · Night flow anomaly</div>
+                  <div class="pred-time" style="color:var(--red)">⚠ IMMEDIATE — Inspect valve V-21 within 24h</div>
+                </div>
+              </div>
+              <div class="pred-item">
+                <div class="pred-prob" style="color:var(--red)">76%</div>
+                <div class="pred-body">
+                  <div class="pred-component">HVAC Unit 3B</div>
+                  <div class="pred-detail">Energy +27% · Temp output unstable · Vibration +15%</div>
+                  <div class="pred-time" style="color:var(--orange)">⏱ Service needed in 8 days · Replace filter + inspect compressor</div>
+                </div>
+              </div>
+              <div class="pred-item">
+                <div class="pred-prob" style="color:var(--yellow)">41%</div>
+                <div class="pred-body">
+                  <div class="pred-component">Kitchen wall W-102</div>
+                  <div class="pred-detail">Moisture 82% — threshold 60% · Rising 48h trend</div>
+                  <div class="pred-time" style="color:var(--yellow)">⏱ Inspect within 72h · Possible internal pipe leak</div>
+                </div>
+              </div>
+              <div class="pred-item">
+                <div class="pred-prob" style="color:var(--green)">18%</div>
+                <div class="pred-body">
+                  <div class="pred-component">WC-01 Floor 1 plumbing</div>
+                  <div class="pred-detail">Moisture 67% · Slightly above threshold · Stable trend</div>
+                  <div class="pred-time" style="color:var(--text3)">Monitor · Check in 7 days during routine inspection</div>
+                </div>
+              </div>
+              <div class="pred-item">
+                <div class="pred-prob" style="color:var(--green)">12%</div>
+                <div class="pred-body">
+                  <div class="pred-component">Elevator motor E-EL01</div>
+                  <div class="pred-detail">Vibration slightly above baseline · Within tolerances</div>
+                  <div class="pred-time" style="color:var(--green)">✓ No action needed · Next check in 30 days</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-calculator"></i>Risk score formula</div></div>
+            <div style="background:var(--bg3);border-radius:8px;padding:16px;font-family:var(--font-mono);font-size:12px;color:var(--text2);line-height:2.2;margin-bottom:14px">
+              <div style="color:var(--cyan);margin-bottom:4px;font-size:13px">Risk Score =</div>
+              <div><span style="color:var(--blue)">0.30</span> × Water Pressure Anomaly +</div>
+              <div><span style="color:var(--cyan)">0.25</span> × Moisture Anomaly +</div>
+              <div><span style="color:var(--orange)">0.20</span> × Temperature Anomaly +</div>
+              <div><span style="color:var(--yellow)">0.15</span> × Electricity Anomaly +</div>
+              <div><span style="color:var(--green)">0.10</span> × Vibration Anomaly</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;font-family:var(--font-mono);margin-bottom:16px">
+              <div style="background:var(--green-bg);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:8px;color:var(--green)"><strong>0–30</strong><br/>Normal</div>
+              <div style="background:var(--yellow-bg);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:8px;color:var(--yellow)"><strong>31–60</strong><br/>Warning</div>
+              <div style="background:var(--orange-bg);border:1px solid rgba(249,115,22,.2);border-radius:6px;padding:8px;color:var(--orange)"><strong>61–80</strong><br/>High Risk</div>
+              <div style="background:var(--red-bg);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:8px;color:var(--red)"><strong>81–100</strong><br/>Critical</div>
+            </div>
+            <div style="position:relative;height:120px">
+              <canvas id="riskChart" role="img" aria-label="Current risk scores by component">Risk scores bar chart.</canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== REPORTS ===== -->
+      <div class="page" id="page-reports">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="ti ti-file-analytics"></i>Monthly report — May 2026</div>
+            <span class="badge badge-green"><i class="ti ti-download"></i>Export PDF</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+            <div style="background:var(--bg3);border-radius:8px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Faults detected</div>
+              <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--red);margin-top:4px">7</div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">3 critical · 4 high</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Energy usage</div>
+              <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--yellow);margin-top:4px">986</div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">kWh this month</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Water usage</div>
+              <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--blue);margin-top:4px">37,500</div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">litres this month</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Cost saved</div>
+              <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--green);margin-top:4px">$3,300</div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">vs $400 repair cost</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Uptime</div>
+              <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--green);margin-top:4px">99.2%</div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">System availability</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:14px">
+              <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">Maintenance tasks</div>
+              <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--cyan);margin-top:4px">12</div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">2 open · 10 completed</div>
+            </div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:14px;font-family:var(--font-mono);font-size:12px;color:var(--text2);line-height:1.8">
+            <div style="color:var(--cyan);margin-bottom:8px;font-size:13px">Key findings this month:</div>
+            <div>• Pipe P-204 pressure anomaly detected early — estimated $900 water damage avoided</div>
+            <div>• HVAC Unit 3B showing degradation — predictive maintenance scheduled before failure</div>
+            <div>• Kitchen wall moisture trending up — recommend inspection of internal plumbing</div>
+            <div>• Overall building health score: 87/100 — above target of 80</div>
+            <div>• 3 sensor battery replacements needed in next 30 days</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SETTINGS ===== -->
+      <div class="page" id="page-settings">
+        <div class="section-grid">
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-bell"></i>Alert thresholds</div></div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;font-family:var(--font-mono);margin-bottom:6px">
+                  <span style="color:var(--text2)">Water pressure critical (%)</span>
+                  <span style="color:var(--text)" id="wpcrit-val">30%</span>
+                </div>
+                <input type="range" min="10" max="50" value="30" style="width:100%" oninput="document.getElementById('wpcrit-val').textContent=this.value+'%'"/>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;font-family:var(--font-mono);margin-bottom:6px">
+                  <span style="color:var(--text2)">Wall moisture warning (%)</span>
+                  <span style="color:var(--text)" id="wmwarn-val">75%</span>
+                </div>
+                <input type="range" min="50" max="95" value="75" style="width:100%" oninput="document.getElementById('wmwarn-val').textContent=this.value+'%'"/>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;font-family:var(--font-mono);margin-bottom:6px">
+                  <span style="color:var(--text2)">CO₂ warning (ppm)</span>
+                  <span style="color:var(--text)" id="co2warn-val">1000</span>
+                </div>
+                <input type="range" min="600" max="2000" step="100" value="1000" style="width:100%" oninput="document.getElementById('co2warn-val').textContent=this.value"/>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;font-family:var(--font-mono);margin-bottom:6px">
+                  <span style="color:var(--text2)">Temperature max (°C)</span>
+                  <span style="color:var(--text)" id="tmpmax-val">32°C</span>
+                </div>
+                <input type="range" min="25" max="45" value="32" style="width:100%" oninput="document.getElementById('tmpmax-val').textContent=this.value+'°C'"/>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title"><i class="ti ti-building"></i>Building info</div></div>
+            <div style="font-family:var(--font-mono);font-size:12px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Building name</span><span style="color:var(--text)">Living Building Alpha</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Floors</span><span style="color:var(--text)">3 + Roof</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Total sensors</span><span style="color:var(--text)">250</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Online sensors</span><span style="color:var(--green)">247</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Data refresh</span><span style="color:var(--text)">Every 60 seconds</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">IoT protocol</span><span style="color:var(--cyan)">MQTT / LoRaWAN</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text3)">Dashboard version</span><span style="color:var(--text3)">v1.0.0-demo</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+const pageNames = {
+  'dashboard':'Dashboard Overview',
+  'digital-twin':'Digital Twin — Floor Map',
+  'sensors':'Sensor Data — Live Readings',
+  'analytics':'Analytics & Data Charts',
+  'alerts':'Alerts & Warnings',
+  'maintenance':'Maintenance & Work Orders',
+  'prediction':'AI Failure Prediction',
+  'reports':'Monthly Reports',
+  'settings':'System Settings'
+};
+
+let analyticsInited = false, maintenanceInited = false, predictionInited = false;
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const p = document.getElementById('page-' + id);
+  if (p) p.classList.add('active');
+  if (el) {
+    el.classList.add('active');
+  } else {
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
+    });
+  }
+  document.getElementById('page-title').textContent = pageNames[id] || id;
+  if (id === 'analytics' && !analyticsInited) { analyticsInited = true; setTimeout(initAnalyticsCharts, 50); }
+  if (id === 'maintenance' && !maintenanceInited) { maintenanceInited = true; setTimeout(initMaintenanceCharts, 50); }
+  if (id === 'prediction' && !predictionInited) { predictionInited = true; setTimeout(initPredictionCharts, 50); }
+}
+
+function selectFloor(n) {
+  ['f1','f2','f3'].forEach((id, i) => {
+    document.getElementById(id).style.display = i === (n-1) ? 'block' : 'none';
+  });
+  [1,2,3].forEach(i => {
+    const btn = document.getElementById('fl'+i+'-btn');
+    if (i === n) { btn.style.background='var(--cyan)'; btn.style.color='#000'; btn.style.border='none'; }
+    else { btn.style.background='var(--bg3)'; btn.style.color='var(--text2)'; btn.style.border='1px solid var(--border)'; }
+  });
+}
+
+// Clock
+let clockRunning = true;
+let clockTime = new Date(2026, 4, 12, 8, 0, 0);
+function updateClock() {
+  if (!clockRunning) return;
+  clockTime.setSeconds(clockTime.getSeconds() + 1);
+  const h = String(clockTime.getHours()).padStart(2,'0');
+  const m = String(clockTime.getMinutes()).padStart(2,'0');
+  const s = String(clockTime.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = h+':'+m+':'+s;
+}
+setInterval(updateClock, 1000);
+function toggleTime() { clockRunning = !clockRunning; }
+
+// Chart defaults
+const CD = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { color: 'rgba(42,48,69,.5)' }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } } },
+    y: { grid: { color: 'rgba(42,48,69,.5)' }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } } }
+  }
+};
+
+// Dashboard charts
+const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+new Chart(document.getElementById('waterChart'), {
+  type: 'bar',
+  data: { labels: days, datasets: [{ data: [980,1100,1050,1200,1350,1400,1250], backgroundColor: 'rgba(59,130,246,.5)', borderColor: '#3b82f6', borderWidth: 1, borderRadius: 3 }] },
+  options: { ...CD }
+});
+new Chart(document.getElementById('elecChart'), {
+  type: 'line',
+  data: { labels: days, datasets: [{ data: [28,30,29,31,34,36,32], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,.12)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#f59e0b' }] },
+  options: { ...CD }
+});
+
+function initAnalyticsCharts() {
+  const hours = ['0h','2h','4h','6h','8h','10h','12h','14h','16h','18h','20h','22h','24h'];
+  new Chart(document.getElementById('pressureChart'), {
+    type: 'line',
+    data: { labels: hours, datasets: [{ data: [2.0,2.0,1.95,1.9,1.85,1.7,1.5,1.3,1.2,1.1,1.1,1.0,1.1], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.12)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#ef4444' }] },
+    options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, min: 0.8, max: 2.2 } } }
+  });
+  const h48 = ['0h','6h','12h','18h','24h','30h','36h','42h','48h'];
+  new Chart(document.getElementById('moistureChart'), {
+    type: 'line',
+    data: { labels: h48, datasets: [{ data: [55,57,58,60,64,70,75,79,82], borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.15)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 3 }] },
+    options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, min: 40, max: 100 } } }
+  });
+  new Chart(document.getElementById('energyZoneChart'), {
+    type: 'bar',
+    data: { labels: ['F1 Living','F1 Kitchen','F2 Office','F2 WC','F3 HVAC','F3 Server'], datasets: [{ data: [8.2,5.4,12.1,3.2,18.6,9.4], backgroundColor: ['rgba(6,182,212,.4)','rgba(6,182,212,.4)','rgba(6,182,212,.4)','rgba(6,182,212,.4)','rgba(239,68,68,.5)','rgba(6,182,212,.4)'], borderColor: ['#06b6d4','#06b6d4','#06b6d4','#06b6d4','#ef4444','#06b6d4'], borderWidth: 1, borderRadius: 3 }] },
+    options: { ...CD }
+  });
+  new Chart(document.getElementById('co2Chart'), {
+    type: 'line',
+    data: { labels: ['6h','8h','10h','12h','14h','16h','18h'], datasets: [
+      { label: 'F1', data: [620,700,780,810,790,740,720], borderColor: '#22c55e', borderWidth: 1.5, tension: 0.3, pointRadius: 2, borderDash: [4,2] },
+      { label: 'F2', data: [720,780,920,1080,1240,1180,980], borderColor: '#ef4444', borderWidth: 2, tension: 0.3, pointRadius: 3 },
+      { label: 'F3', data: [580,620,660,680,700,720,690], borderColor: '#06b6d4', borderWidth: 1.5, tension: 0.3, pointRadius: 2, borderDash: [6,3] }
+    ] },
+    options: { ...CD, plugins: { legend: { display: true, labels: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 }, boxWidth: 12 } } } }
+  });
+}
+
+function initMaintenanceCharts() {
+  new Chart(document.getElementById('roiChart'), {
+    type: 'bar',
+    data: { labels: ['Jan','Feb','Mar','Apr','May'], datasets: [
+      { label: 'Avoided', data: [1200,2800,1900,3100,3300], backgroundColor: 'rgba(34,197,94,.4)', borderColor: '#22c55e', borderWidth: 1, borderRadius: 2 },
+      { label: 'Repair', data: [180,320,240,380,400], backgroundColor: 'rgba(245,158,11,.4)', borderColor: '#f59e0b', borderWidth: 1, borderRadius: 2 }
+    ] },
+    options: { ...CD, plugins: { legend: { display: true, labels: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 10 }, boxWidth: 10 } } } }
+  });
+}
+
+function initPredictionCharts() {
+  new Chart(document.getElementById('riskChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Pipe P-204','HVAC 3B','Wall W-102','WC-01','Elevator'],
+      datasets: [{ data: [84,76,41,18,12], backgroundColor: ['rgba(239,68,68,.5)','rgba(239,68,68,.4)','rgba(245,158,11,.4)','rgba(34,197,94,.3)','rgba(34,197,94,.3)'], borderColor: ['#ef4444','#ef4444','#f59e0b','#22c55e','#22c55e'], borderWidth: 1, borderRadius: 3 }]
+    },
+    options: { ...CD, scales: { ...CD.scales, y: { ...CD.scales.y, min: 0, max: 100 } } }
+  });
+}
+</script>
+</body>
+</html>
